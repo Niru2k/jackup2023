@@ -1,7 +1,8 @@
 package main
 
-import "fmt"
+import "blog/router"
 
 func main() {
-	fmt.Println("Implement me")
+	//Routing all the handlers
+	router.Router()
 }
