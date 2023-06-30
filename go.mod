@@ -6,6 +6,7 @@ require (
 	github.com/gofiber/fiber/v2 v2.47.0
 	github.com/golang-jwt/jwt/v4 v4.5.0
 	github.com/sirupsen/logrus v1.9.3
+	github.com/t-tomalak/logrus-easy-formatter v0.0.0-20190827215021-c074f06c5816
 	golang.org/x/crypto v0.10.0
 )
 
