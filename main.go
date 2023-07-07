@@ -1,7 +1,15 @@
 package main
 
-import "fmt"
+import (
+	//User-defined package
+	"blog/drivers"
+	"blog/router"
+)
 
 func main() {
-	fmt.Println("Implement me")
+	//Establishing a DB-connection
+	Db := drivers.DbConnection()
+
+	//Routing all the handlers
+	router.Router(Db)
 }
