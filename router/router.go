@@ -21,16 +21,11 @@ func Router(Db *gorm.DB) {
 	app.Post("/login", control.Login)
 	app.Get("/getPoster/:post_id", control.GetPosterById)
 
-	//Only for user
-	app.Post("/user/addComment", middleware.AuthMiddleware(), control.AddComment)
-
 	//Only for admin
 	app.Post("/admin/postPoster", middleware.AuthMiddleware(), control.PostPoster)
 	app.Get("/admin/getPosters", middleware.AuthMiddleware(), control.GetPosters)
 	app.Put("/admin/updatePoster/:post_id", middleware.AuthMiddleware(), control.UpdatePosterById)
 	app.Delete("/admin/deletePoster/:post_id", middleware.AuthMiddleware(), control.DeletePosterById)
-	app.Get("/admin/getComments/:post_id", middleware.AuthMiddleware(), control.GetCommentByPostId)
-	app.Delete("/admin/deleteComment/:comment_id", middleware.AuthMiddleware(), control.DeleteCommentById)
 
 	//start a server
 	log.Info("Server starts in port 8000.....")

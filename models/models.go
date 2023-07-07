@@ -64,23 +64,3 @@ type Post struct {
 	UserId      uint      `json:"-" gorm:"column:user_id;type:bigint references Users(user_id)"`
 	Date        time.Time `json:"-" gorm:"autoCreateTime"`
 }
-
-// Comments
-type Comments struct {
-	CommentId uint   `json:"comment_id"`
-	UserId    uint   `json:"user_id"`
-	Email     string `json:"email"`
-	PostId    uint   `json:"post_id"`
-	PostTitle string `json:"post_title"`
-	Comment   string `json:"comment"`
-}
-
-// Comments request
-type CommentReq struct {
-	PostTitle string `json:"post_title"`
-	Email     string `json:"email"`
-	Comment   string `json:"comment"`
-}
-
-// This slice is used instead of Post table
-var CommentTable []Comments

@@ -27,14 +27,15 @@ type Database struct {
 
 // This is for Signup
 func (db Database) Signup(c *fiber.Ctx) error {
-	log := logs.Log()
-	log.Info("signup-API called...")
-	defer log.Info("signup-API finished")
 	var (
 		data models.User
 		comp models.User
 		role models.Roles
 	)
+	log := logs.Log()
+	log.Info("signup-API called...")
+	defer log.Info("signup-API finished")
+
 	//Get user details from request body
 	if err := c.BodyParser(&data); err != nil {
 		log.Error(err)
@@ -93,14 +94,14 @@ func (db Database) Signup(c *fiber.Ctx) error {
 
 // This is for Login
 func (db Database) Login(c *fiber.Ctx) error {
-	log := logs.Log()
-	log.Info("login-API called...")
-	defer log.Info("login-API finished")
 	var (
 		data models.User
 		auth models.Authentication
 		user models.User
 	)
+	log := logs.Log()
+	log.Info("login-API called...")
+	defer log.Info("login-API finished")
 
 	//Get mail-id and password from request body
 	if err := c.BodyParser(&data); err != nil {
@@ -174,6 +175,10 @@ func (db Database) Login(c *fiber.Ctx) error {
 
 // Handler for post a poster
 func (db Database) PostPoster(c *fiber.Ctx) error {
+	var (
+		Post     models.Post
+		Catagory models.Catagory
+	)
 	log := logs.Log()
 	if err := middleware.AdminAuth(c); err != nil {
 		log.Error("unauthorized entry")
@@ -183,10 +188,7 @@ func (db Database) PostPoster(c *fiber.Ctx) error {
 	}
 	log.Info("poster-API called...")
 	defer log.Info("poster-API finished")
-	var (
-		Post     models.Post
-		Catagory models.Catagory
-	)
+	
 	if err := c.BodyParser(&Post); err != nil {
 		log.Error(err)
 		return nil
@@ -355,96 +357,5 @@ func (db Database) DeletePosterById(c *fiber.Ctx) error {
 	return c.JSON(fiber.Map{
 		"status":  404,
 		"message": "Post not found",
-	})
-}
-
-// Handler for add comment to a post
-func (db Database) AddComment(c *fiber.Ctx) error {
-	log := logs.Log()
-	if err := middleware.UserAuth(c); err != nil {
-		log.Error("unauthorized entry")
-		return c.Status(fiber.StatusForbidden).JSON(fiber.Map{
-			"message": "unauthorized entry",
-		})
-	}
-	log.Info("AddComment-API called...")
-	defer log.Info("AddComment-API finished")
-	var commentData models.Comments
-	if err := c.BodyParser(&commentData); err != nil {
-		log.Error(err)
-		return nil
-	}
-	models.CommentTable = append(models.CommentTable, commentData)
-	log.Info("comment added successfully")
-	c.Status(fiber.StatusAccepted)
-	return c.JSON(fiber.Map{
-		"status":  200,
-		"message": "comment added successfully",
-	})
-}
-
-// Handler for get a comment by post-id
-func (db Database) GetCommentByPostId(c *fiber.Ctx) error {
-	log := logs.Log()
-	if err := middleware.AdminAuth(c); err != nil {
-		log.Error("unauthorized entry")
-		return c.Status(fiber.StatusForbidden).JSON(fiber.Map{
-			"message": "unauthorized entry",
-		})
-	}
-	log.Info("GetCommentById-API called...")
-	defer log.Info("GetCommentById-API finished")
-	post_id, _ := strconv.Atoi(c.Params("post_id", ""))
-	var (
-		commentData []models.Comments
-		check       bool
-	)
-	for _, value := range models.CommentTable {
-		if value.PostId == uint(post_id) {
-			check = true
-			commentData = append(commentData, value)
-		}
-	}
-	if check {
-		log.Info("Comment(s) retrieved Successfully!!!")
-		return c.JSON(fiber.Map{
-			"status":    200,
-			"Post data": commentData,
-		})
-	}
-	log.Info("Comment not found for this post")
-	c.Status(fiber.StatusNotFound)
-	return c.JSON(fiber.Map{
-		"status":  404,
-		"message": "Comment not found for this post",
-	})
-}
-
-func (db Database) DeleteCommentById(c *fiber.Ctx) error {
-	log := logs.Log()
-	if err := middleware.AdminAuth(c); err != nil {
-		log.Error("unauthorized entry")
-		return c.Status(fiber.StatusForbidden).JSON(fiber.Map{
-			"message": "unauthorized entry",
-		})
-	}
-	log.Info("DeleteCommentById-API called...")
-	defer log.Info("DeleteCommentById-API finished")
-	comment_id, _ := strconv.Atoi(c.Params("comment_id", ""))
-	for index, value := range models.CommentTable {
-		if value.CommentId == uint(comment_id) {
-			models.CommentTable = append(models.CommentTable[:index], models.CommentTable[index+1:]...)
-			log.Info("Comment deleted Successfully!!!")
-			return c.JSON(fiber.Map{
-				"status":  200,
-				"message": "Comment deleted Successfully!!!",
-			})
-		}
-	}
-	log.Info("Comment not found")
-	c.Status(fiber.StatusNotFound)
-	return c.JSON(fiber.Map{
-		"status":  404,
-		"message": "Comment not found",
 	})
 }
