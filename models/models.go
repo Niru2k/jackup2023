@@ -1,7 +1,11 @@
 package models
 
 import (
+	//Inbuild package(s)
 	"time"
+
+	//Third-party package(s)
+	"gorm.io/gorm"
 )
 
 // Login credentials
@@ -27,12 +31,11 @@ type PostReq struct {
 
 // User details
 type User struct {
-	// gorm.Model
 	UserId   uint   `json:"-" gorm:"primarykey"`
-	Username string `json:"username" gorm:"column:username;type:varchar(100)"`
-	Email    string `json:"email" gorm:"column:email;type:varchar(100) unique"`
-	Password string `json:"password" gorm:"column:password;type:varchar(100)"`
-	Role     string `json:"role" gorm:"-:all"`
+	Username string `json:"username" binding:"required" gorm:"column:username;type:varchar(100)"`
+	Email    string `json:"email" binding:"required" gorm:"column:email;type:varchar(100) unique"`
+	Password string `json:"password" binding:"required" gorm:"column:password;type:varchar(100)"`
+	Role     string `json:"role" binding:"required" gorm:"-:all"`
 	RoleId   uint   `json:"-" gorm:"column:role_id;type:bigint references Roles(role_id)"`
 }
 
@@ -56,11 +59,31 @@ type Authentication struct {
 
 // Post details
 type Post struct {
-	PostId      uint      `json:"-" gorm:"primarykey"`
-	PostTitle   string    `json:"post_title,omitempty" gorm:"column:post_title;type:varchar(100)"`
-	PostContent string    `json:"post_content,omitempty" gorm:"column:post_content;type:varchar(500)"`
-	Catagory    string    `json:"catagory,omitempty" gorm:"-"`
-	CatagoryId  uint      `json:"-" gorm:"column:catagory_id;type:bigint references Catagories(catagory_id)"`
-	UserId      uint      `json:"-" gorm:"column:user_id;type:bigint references Users(user_id)"`
-	Date        time.Time `json:"-" gorm:"autoCreateTime"`
+	PostId      uint           `json:"-" gorm:"primarykey"`
+	PostTitle   string         `json:"post_title,omitempty" binding:"required" gorm:"column:post_title;type:varchar(100) unique"`
+	PostContent string         `json:"post_content,omitempty" binding:"required" gorm:"column:post_content;type:varchar(500)"`
+	Catagory    string         `json:"catagory,omitempty" binding:"required" gorm:"-"`
+	CatagoryId  uint           `json:"-" gorm:"column:catagory_id;type:bigint references Catagories(catagory_id)"`
+	UserId      uint           `json:"-" gorm:"column:user_id;type:bigint references Users(user_id)"`
+	CreatedAt   time.Time      `json:"-" gorm:"autoCreateTime"`
+	UpdatedAt   time.Time      `json:"-" gorm:"autoUpdateTime"`
+	DeletedAt   gorm.DeletedAt `json:"-" gorm:"index"`
+}
+
+// Comments
+type Comments struct {
+	CommentId uint           `json:"-" gorm:"primarykey"`
+	Comment   string         `json:"comment" binding:"required" gorm:"column:comment;type:varchar(200)"`
+	UserId    uint           `json:"-" gorm:"column:user_id;type:bigint references Users(user_id)"`
+	PostId    uint           `json:"-" gorm:"column:post_id;type:bigint references Posts(post_id)"`
+	PostTitle string         `json:"post_title,omitempty" binding:"required" gorm:"-"`
+	CreatedAt time.Time      `json:"-" gorm:"autoCreateTime"`
+	UpdatedAt time.Time      `json:"-" gorm:"autoUpdateTime"`
+	DeletedAt gorm.DeletedAt `json:"-" gorm:"index"`
+}
+
+// Comments request
+type CommentReq struct {
+	PostTitle string `json:"post_title"`
+	Comment   string `json:"comment"`
 }
