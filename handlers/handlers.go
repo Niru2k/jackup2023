@@ -95,7 +95,8 @@ func (db Database) Signup(c *fiber.Ctx) error {
 	data.Password = string(password)
 
 	//Select a role_id for specified role
-	role, _ = repository.ReadRoleIdByRole(db.Db, data)
+	role, _ = repository.
+	ReadRoleIdByRole(db.Db, data)
 	data.RoleId = role.RoleId
 
 	//Adding a user details into our database
@@ -123,7 +124,8 @@ func (db Database) Login(c *fiber.Ctx) error {
 
 	//Get mail-id and password from request body
 	if err := c.BodyParser(&data); err != nil {
-		log.Error(err)
+	
+		
 		return c.JSON(fiber.Map{
 			"status":  500,
 			"message": "internal server error",
@@ -159,7 +161,7 @@ func (db Database) Login(c *fiber.Ctx) error {
 			// Fetch a JWT token
 			auth, err := repository.ReadTokenByUserId(db.Db, user)
 			if err == nil {
-				// c.Response().Header.Add("Authorization", auth.Token)
+				
 				log.Info("Login Successful!!!")
 				return c.JSON(fiber.Map{
 					"status":  200,
@@ -181,7 +183,7 @@ func (db Database) Login(c *fiber.Ctx) error {
 					"message": err.Error(),
 				})
 			}
-			// c.Response().Header.Add("Authorization", token)
+
 			log.Info("Login Successful!!!")
 			return c.JSON(fiber.Map{
 				"status":  200,

@@ -44,12 +44,6 @@ func TableCreation(Db *gorm.DB) {
 	log.Info("Tables are created succesfully")
 }
 
-// Retrieve the User details by user-id
-func ReadUserByUserId(Db *gorm.DB, data models.User) (models.User, error) {
-	err := Db.Where("user_id = ?", data.UserId).First(&data).Error
-	return data, err
-}
-
 // Retrieve the User's role by role-id
 func ReadRoleIdByRole(Db *gorm.DB, data models.User) (models.Roles, error) {
 	role := models.Roles{}
