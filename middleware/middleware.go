@@ -3,10 +3,13 @@ package middleware
 import (
 	//User-defined packages
 	"blog/helper"
+	"blog/logs"
 	"blog/models"
+	"blog/repository"
 
 	//Inbuild packages
 	"errors"
+	"os"
 	"strconv"
 	"time"
 
@@ -16,28 +19,33 @@ import (
 	"gorm.io/gorm"
 )
 
-func CreateToken(db *gorm.DB, user models.User, c *fiber.Ctx) (string, error) {
+func CreateToken(user models.User, c *fiber.Ctx) (string, error) {
+	log := logs.Log()
+	if err := helper.Config(".env"); err != nil {
+		log.Error("Error at loading '.env' file")
+	}
 	exp := time.Now().Add(time.Hour * 24).Unix()
 	userId := strconv.Itoa(int(user.UserId))
 	roleId := strconv.Itoa(int(user.RoleId))
 	claims := jwt.StandardClaims{
-		Audience:  "",
 		ExpiresAt: exp,
 		Id:        userId,
 		IssuedAt:  time.Now().Unix(),
-		Issuer:    "JWT",
-		NotBefore: 0,
 		Subject:   roleId,
 	}
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
-	tokenString, err := token.SignedString([]byte(helper.SecretKey))
+	tokenString, err := token.SignedString([]byte(os.Getenv("SECRET_KEY")))
 	if err != nil {
 		return "", err
 	}
 	return tokenString, nil
 }
 
-func AuthMiddleware() fiber.Handler {
+func AuthMiddleware(db *gorm.DB) fiber.Handler {
+	log := logs.Log()
+	if err := helper.Config(".env"); err != nil {
+		log.Error("Error at loading '.env' file")
+	}
 	return func(c *fiber.Ctx) error {
 		tokenString := c.Get("Authorization")
 		if tokenString == "" {
@@ -51,9 +59,10 @@ func AuthMiddleware() fiber.Handler {
 				tokenString = tokenString[index+1:]
 			}
 		}
+
 		claims := jwt.StandardClaims{}
 		token, err := jwt.ParseWithClaims(tokenString, &claims, func(token *jwt.Token) (interface{}, error) {
-			return []byte(helper.SecretKey), nil
+			return []byte(os.Getenv("SECRET_KEY")), nil
 		})
 
 		if err != nil {
@@ -61,17 +70,21 @@ func AuthMiddleware() fiber.Handler {
 				return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
 					"message": "Invalid token signature",
 				})
+			} else if claims.ExpiresAt < time.Now().Unix() {
+				repository.DeleteToken(db, claims.Id)
+				log.Error("session expired...login again!!!")
+				c.Status(fiber.StatusGatewayTimeout)
+				return c.JSON(fiber.Map{
+					"status":  504,
+					"message": "session expired...login again!!!",
+				})
+			} else if !token.Valid {
+				return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
+					"message": "unauthorized",
+				})
 			}
-			return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
-				"message": "Expired token",
-			})
 		}
 
-		if !token.Valid {
-			return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
-				"message": "Invalid token",
-			})
-		}
 		// Check the user's role
 		if claims.Subject == "1" {
 			c.Locals("role", "admin")
@@ -84,6 +97,10 @@ func AuthMiddleware() fiber.Handler {
 }
 
 func GetTokenClaims(c *fiber.Ctx) jwt.StandardClaims {
+	log := logs.Log()
+	if err := helper.Config(".env"); err != nil {
+		log.Error("Error at loading '.env' file")
+	}
 	tokenString := c.Get("Authorization")
 	for index, char := range tokenString {
 		if char == ' ' {
@@ -92,7 +109,7 @@ func GetTokenClaims(c *fiber.Ctx) jwt.StandardClaims {
 	}
 	claims := jwt.StandardClaims{}
 	jwt.ParseWithClaims(tokenString, &claims, func(token *jwt.Token) (interface{}, error) {
-		return []byte(helper.SecretKey), nil
+		return []byte(os.Getenv("SECRET_KEY")), nil
 	})
 	return claims
 }
