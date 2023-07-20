@@ -19,6 +19,7 @@ import (
 	"gorm.io/gorm"
 )
 
+//Create a JWT token with the needed claims
 func CreateToken(user models.User, c *fiber.Ctx) (string, error) {
 	log := logs.Log()
 	if err := helper.Config(".env"); err != nil {
@@ -41,6 +42,7 @@ func CreateToken(user models.User, c *fiber.Ctx) (string, error) {
 	return tokenString, nil
 }
 
+//Token and claims validation
 func AuthMiddleware(db *gorm.DB) fiber.Handler {
 	log := logs.Log()
 	if err := helper.Config(".env"); err != nil {
@@ -96,6 +98,7 @@ func AuthMiddleware(db *gorm.DB) fiber.Handler {
 	}
 }
 
+//Get a claims from the token
 func GetTokenClaims(c *fiber.Ctx) jwt.StandardClaims {
 	log := logs.Log()
 	if err := helper.Config(".env"); err != nil {
@@ -114,6 +117,7 @@ func GetTokenClaims(c *fiber.Ctx) jwt.StandardClaims {
 	return claims
 }
 
+//Admin authorization
 func AdminAuth(c *fiber.Ctx) error {
 	role := c.Locals("role").(string)
 	if role != "admin" {
@@ -122,10 +126,20 @@ func AdminAuth(c *fiber.Ctx) error {
 	return nil
 }
 
+//User authorization
 func UserAuth(c *fiber.Ctx) error {
 	role := c.Locals("role").(string)
 	if role != "user" {
 		return errors.New("unauthorized entry")
 	}
 	return nil
+}
+
+//Common authorization for admin & user
+func CommonAuth(c *fiber.Ctx) error {
+	role := c.Locals("role").(string)
+	if role == "user" || role == "admin" {
+		return nil
+	}
+	return errors.New("unauthorized entry")
 }

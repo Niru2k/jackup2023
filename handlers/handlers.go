@@ -81,7 +81,6 @@ func (db Database) Signup(c *fiber.Ctx) error {
 		log.Error("user already exist")
 		return c.JSON(fiber.Map{
 			"status":  409,
-			
 			"message": "user already exist",
 		})
 	}
@@ -96,7 +95,7 @@ func (db Database) Signup(c *fiber.Ctx) error {
 
 	//Select a role_id for specified role
 	role, _ = repository.
-	ReadRoleIdByRole(db.Db, data)
+		ReadRoleIdByRole(db.Db, data)
 	data.RoleId = role.RoleId
 
 	//Adding a user details into our database
@@ -124,8 +123,6 @@ func (db Database) Login(c *fiber.Ctx) error {
 
 	//Get mail-id and password from request body
 	if err := c.BodyParser(&data); err != nil {
-	
-		
 		return c.JSON(fiber.Map{
 			"status":  500,
 			"message": "internal server error",
@@ -161,7 +158,7 @@ func (db Database) Login(c *fiber.Ctx) error {
 			// Fetch a JWT token
 			auth, err := repository.ReadTokenByUserId(db.Db, user)
 			if err == nil {
-				
+
 				log.Info("Login Successful!!!")
 				return c.JSON(fiber.Map{
 					"status":  200,
@@ -218,6 +215,7 @@ func (db Database) PostPoster(c *fiber.Ctx) error {
 		log.Error("unauthorized entry")
 		return c.Status(fiber.StatusForbidden).JSON(fiber.Map{
 			"message": "unauthorized entry",
+			"status":  401,
 		})
 	}
 	log.Info("poster-API called...")
@@ -269,12 +267,13 @@ func (db Database) PostPoster(c *fiber.Ctx) error {
 }
 
 // Handler for get posters which were posted by a particular user
-func (db Database) GetPosters(c *fiber.Ctx) error {
+func (db Database) GetPostersByUserId(c *fiber.Ctx) error {
 	log := logs.Log()
 	if err := middleware.AdminAuth(c); err != nil {
 		log.Error("unauthorized entry")
 		return c.Status(fiber.StatusForbidden).JSON(fiber.Map{
 			"message": "unauthorized entry",
+			"status":  401,
 		})
 	}
 	log.Info("Getposters-API called...")
@@ -299,6 +298,13 @@ func (db Database) GetPosters(c *fiber.Ctx) error {
 // Handler for get all posters
 func (db Database) GetAllPosters(c *fiber.Ctx) error {
 	log := logs.Log()
+	if err := middleware.CommonAuth(c); err != nil {
+		log.Error("unauthorized entry")
+		return c.Status(fiber.StatusForbidden).JSON(fiber.Map{
+			"message": "unauthorized entry",
+			"status":  401,
+		})
+	}
 	log.Info("GetAllPosters-API called...")
 	defer log.Info("GetAllPosters-API finished")
 	Posts, err := repository.ReadAllPosters(db.Db)
@@ -320,6 +326,13 @@ func (db Database) GetAllPosters(c *fiber.Ctx) error {
 // Handler for get a poster by post-id
 func (db Database) GetPosterById(c *fiber.Ctx) error {
 	log := logs.Log()
+	if err := middleware.CommonAuth(c); err != nil {
+		log.Error("unauthorized entry")
+		return c.Status(fiber.StatusForbidden).JSON(fiber.Map{
+			"message": "unauthorized entry",
+			"status":  401,
+		})
+	}
 	log.Info("Getposter-API called...")
 	defer log.Info("Getposter-API finished")
 	Post, err := repository.ReadPostByPostId(db.Db, c.Params("post_id", ""))
@@ -342,10 +355,12 @@ func (db Database) GetPosterById(c *fiber.Ctx) error {
 func (db Database) UpdatePosterById(c *fiber.Ctx) error {
 	var check int
 	log := logs.Log()
+
 	if err := middleware.AdminAuth(c); err != nil {
 		log.Info("unauthorized entry")
 		return c.Status(fiber.StatusForbidden).JSON(fiber.Map{
 			"message": "unauthorized entry",
+			"status":  401,
 		})
 	}
 	log.Info("Updateposter-API called...")
@@ -408,6 +423,7 @@ func (db Database) DeletePosterById(c *fiber.Ctx) error {
 		log.Error("unauthorized entry")
 		return c.Status(fiber.StatusForbidden).JSON(fiber.Map{
 			"message": "unauthorized entry",
+			"status":  401,
 		})
 	}
 	log.Info("Deleteposter-API called...")
@@ -437,6 +453,7 @@ func (db Database) AddComment(c *fiber.Ctx) error {
 		log.Error("unauthorized entry")
 		return c.Status(fiber.StatusForbidden).JSON(fiber.Map{
 			"message": "unauthorized entry",
+			"status":  401,
 		})
 
 	}
@@ -466,7 +483,6 @@ func (db Database) AddComment(c *fiber.Ctx) error {
 	if err != nil {
 		log.Error(err)
 
-		
 		return c.JSON(fiber.Map{
 			"status":  400,
 			"message": "post not found",
@@ -496,6 +512,7 @@ func (db Database) EditCommentByCommentId(c *fiber.Ctx) error {
 		log.Info("unauthorized entry")
 		return c.Status(fiber.StatusForbidden).JSON(fiber.Map{
 			"message": "unauthorized entry",
+			"status":  401,
 		})
 	}
 	log.Info("Updateposter-API called...")
@@ -537,10 +554,11 @@ func (db Database) EditCommentByCommentId(c *fiber.Ctx) error {
 // Handler for get a comment by post-id
 func (db Database) GetCommentByPostId(c *fiber.Ctx) error {
 	log := logs.Log()
-	if err := middleware.AdminAuth(c); err != nil {
+	if err := middleware.CommonAuth(c); err != nil {
 		log.Error("unauthorized entry")
 		return c.Status(fiber.StatusForbidden).JSON(fiber.Map{
 			"message": "unauthorized entry",
+			"status":  401,
 		})
 	}
 	log.Info("GetCommentById-API called...")
@@ -564,6 +582,13 @@ func (db Database) GetCommentByPostId(c *fiber.Ctx) error {
 // Handler for delete a comment
 func (db Database) DeleteCommentById(c *fiber.Ctx) error {
 	log := logs.Log()
+	if err := middleware.CommonAuth(c); err != nil {
+		log.Error("unauthorized entry")
+		return c.Status(fiber.StatusForbidden).JSON(fiber.Map{
+			"message": "unauthorized entry",
+			"status":  401,
+		})
+	}
 	log.Info("DeleteCommentById-API called...")
 	defer log.Info("DeleteCommentById-API finished")
 	if _, err := repository.ReadCommentByCommentId(db.Db, c.Params("comment_id", "")); err == nil {
@@ -585,6 +610,14 @@ func (db Database) DeleteCommentById(c *fiber.Ctx) error {
 // Handler for Logout
 func (db Database) Logout(c *fiber.Ctx) error {
 	log := logs.Log()
+	if err := middleware.CommonAuth(c); err != nil {
+		log.Error("unauthorized entry")
+		return c.Status(fiber.StatusForbidden).JSON(fiber.Map{
+			"message": "unauthorized entry",
+			"status":  401,
+		})
+	}
+	
 	log.Info("Logout-API called...")
 	defer log.Info("Logout-API finished")
 	claims := middleware.GetTokenClaims(c)
