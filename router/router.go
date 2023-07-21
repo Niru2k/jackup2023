@@ -19,10 +19,11 @@ func Router(Db *gorm.DB) {
 	//Public
 	app.Post("/signup", control.Signup)
 	app.Post("/login", control.Login)
-	app.Get("/getAllPosters", control.GetAllPosters)
-	app.Get("/getPoster/:post_id", control.GetPosterById)
-	app.Delete("/deleteComment/:comment_id", control.DeleteCommentById)
-	app.Get("/logout", control.Logout)
+	app.Get("/getAllPosters", middleware.AuthMiddleware(control.Db), control.GetAllPosters)
+	app.Get("/getPoster/:post_id", middleware.AuthMiddleware(control.Db), control.GetPosterById)
+	app.Get("/admin/getComments/:post_id", middleware.AuthMiddleware(control.Db), control.GetCommentByPostId)
+	app.Delete("/deleteComment/:comment_id", middleware.AuthMiddleware(control.Db), control.DeleteCommentById)
+	app.Get("/logout", middleware.AuthMiddleware(control.Db), control.Logout)
 
 	//Only for user
 	app.Post("/user/addComment", middleware.AuthMiddleware(control.Db), control.AddComment)
@@ -30,10 +31,9 @@ func Router(Db *gorm.DB) {
 
 	//Only for admin
 	app.Post("/admin/postPoster", middleware.AuthMiddleware(control.Db), control.PostPoster)
-	app.Get("/admin/getPosters", middleware.AuthMiddleware(control.Db), control.GetPosters)
+	app.Get("/admin/getPostersByAdmin", middleware.AuthMiddleware(control.Db), control.GetPostersByUserId)
 	app.Put("/admin/updatePoster/:post_id", middleware.AuthMiddleware(control.Db), control.UpdatePosterById)
 	app.Delete("/admin/deletePoster/:post_id", middleware.AuthMiddleware(control.Db), control.DeletePosterById)
-	app.Get("/admin/getComments/:post_id", middleware.AuthMiddleware(control.Db), control.GetCommentByPostId)
 
 	//start a server
 	log.Info("Server starts in port 8000.....")
