@@ -2,7 +2,6 @@ package repository
 
 import (
 	//User defined packages
-	"blog/logs"
 	"blog/models"
 
 	//Third-party packages
@@ -32,7 +31,6 @@ func Addcatagory(Db *gorm.DB) {
 
 // Table creation
 func TableCreation(Db *gorm.DB) {
-	log := logs.Log()
 	Db.AutoMigrate(&models.Roles{})
 	Db.AutoMigrate(&models.Catagory{})
 	Db.AutoMigrate(&models.User{})
@@ -41,7 +39,6 @@ func TableCreation(Db *gorm.DB) {
 	Db.AutoMigrate(&models.Comments{})
 	AddRoles(Db)
 	Addcatagory(Db)
-	log.Info.Println("Message : 'Tables are created succesfully'")
 }
 
 // Retrieve the User's role by role-id

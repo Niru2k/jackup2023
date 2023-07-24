@@ -19,7 +19,7 @@ func DbConnection() *gorm.DB {
 	log := logs.Log()
 	//Loading a '.env' file
 	if err := helper.Config(".env"); err != nil {
-		log.Error.Println("Message : 'Error at loading '.env' file'")
+		log.Error.Println("Error : 'Error at loading '.env' file'")
 	}
 	Host := os.Getenv("HOST")
 	Port := os.Getenv("PORT")
@@ -33,7 +33,7 @@ func DbConnection() *gorm.DB {
 	if err != nil {
 		panic(err)
 	}
-	fmt.Printf("Established a successful connection to '%s' database!!!\n", Dbname)
+	log.Info.Printf("Message : Established a successful connection to '%s' database!!!\n", Dbname)
 
 	//Table creation
 	repository.TableCreation(Db)
