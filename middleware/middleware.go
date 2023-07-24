@@ -50,9 +50,10 @@ func AuthMiddleware(db *gorm.DB) fiber.Handler {
 	}
 	return func(c *fiber.Ctx) error {
 		tokenString := c.Get("Authorization")
+		//To check the token is empty or not
 		if tokenString == "" {
 			return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
-				"message": "Unauthorized",
+				"message": "token is empty",
 			})
 		}
 
@@ -82,7 +83,7 @@ func AuthMiddleware(db *gorm.DB) fiber.Handler {
 				})
 			} else if !token.Valid {
 				return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
-					"message": "unauthorized",
+					"message": "Invalid token",
 				})
 			}
 		}
@@ -133,13 +134,4 @@ func UserAuth(c *fiber.Ctx) error {
 		return errors.New("unauthorized entry")
 	}
 	return nil
-}
-
-// Common authorization for admin & user
-func CommonAuth(c *fiber.Ctx) error {
-	role := c.Locals("role").(string)
-	if role == "user" || role == "admin" {
-		return nil
-	}
-	return errors.New("unauthorized entry")
 }
