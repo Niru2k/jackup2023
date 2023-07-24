@@ -9,7 +9,7 @@ import (
 func main() {
 	//Establishing a DB-connection
 	Db := drivers.DbConnection()
-	
+
 	//Routing all the handlers
 	router.Router(Db)
 }
