@@ -21,7 +21,7 @@ func Config(file string) error {
 	log := logs.Log()
 	//Load the given file
 	if err := godotenv.Load(file); err != nil {
-		log.Errorf("Error at loading %s file", file)
+		log.Error.Printf("Error : 'Error at loading %s file'", file)
 		return err
 	}
 	return nil

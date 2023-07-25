@@ -2,6 +2,7 @@ package models
 
 import (
 	//Inbuild package(s)
+	"log"
 	"time"
 
 	//Third-party package(s)
@@ -86,4 +87,10 @@ type Comments struct {
 type CommentReq struct {
 	PostTitle string `json:"post_title"`
 	Comment   string `json:"comment"`
+}
+
+// Custom Log
+type Logs struct {
+	Info  *log.Logger
+	Error *log.Logger
 }

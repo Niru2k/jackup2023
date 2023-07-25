@@ -19,11 +19,11 @@ import (
 	"gorm.io/gorm"
 )
 
-//Create a JWT token with the needed claims
+// Create a JWT token with the needed claims
 func CreateToken(user models.User, c *fiber.Ctx) (string, error) {
 	log := logs.Log()
 	if err := helper.Config(".env"); err != nil {
-		log.Error("Error at loading '.env' file")
+		log.Error.Println("Error : 'Error at loading '.env' file'")
 	}
 	exp := time.Now().Add(time.Hour * 24).Unix()
 	userId := strconv.Itoa(int(user.UserId))
@@ -42,17 +42,18 @@ func CreateToken(user models.User, c *fiber.Ctx) (string, error) {
 	return tokenString, nil
 }
 
-//Token and claims validation
+// Token and claims validation
 func AuthMiddleware(db *gorm.DB) fiber.Handler {
 	log := logs.Log()
 	if err := helper.Config(".env"); err != nil {
-		log.Error("Error at loading '.env' file")
+		log.Error.Println("Error : 'Error at loading '.env' file'")
 	}
 	return func(c *fiber.Ctx) error {
 		tokenString := c.Get("Authorization")
+		//To check the token is empty or not
 		if tokenString == "" {
 			return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
-				"message": "Unauthorized",
+				"Error": "token is empty",
 			})
 		}
 
@@ -70,19 +71,19 @@ func AuthMiddleware(db *gorm.DB) fiber.Handler {
 		if err != nil {
 			if errors.Is(err, jwt.ErrSignatureInvalid) {
 				return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
-					"message": "Invalid token signature",
+					"Error": "Invalid token signature",
 				})
 			} else if claims.ExpiresAt < time.Now().Unix() {
 				repository.DeleteToken(db, claims.Id)
-				log.Error("session expired...login again!!!")
+				log.Error.Println("Error : 'session expired...login again!!!' Status : 440")
 				c.Status(fiber.StatusGatewayTimeout)
 				return c.JSON(fiber.Map{
-					"status":  504,
-					"message": "session expired...login again!!!",
+					"status":  440,
+					"Error": "session expired...login again!!!",
 				})
 			} else if !token.Valid {
 				return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
-					"message": "unauthorized",
+					"Error": "Invalid token",
 				})
 			}
 		}
@@ -98,11 +99,11 @@ func AuthMiddleware(db *gorm.DB) fiber.Handler {
 	}
 }
 
-//Get a claims from the token
+// Get a claims from the token
 func GetTokenClaims(c *fiber.Ctx) jwt.StandardClaims {
 	log := logs.Log()
 	if err := helper.Config(".env"); err != nil {
-		log.Error("Error at loading '.env' file")
+		log.Error.Println("Error : 'Error at loading '.env' file'")
 	}
 	tokenString := c.Get("Authorization")
 	for index, char := range tokenString {
@@ -117,7 +118,7 @@ func GetTokenClaims(c *fiber.Ctx) jwt.StandardClaims {
 	return claims
 }
 
-//Admin authorization
+// Admin authorization
 func AdminAuth(c *fiber.Ctx) error {
 	role := c.Locals("role").(string)
 	if role != "admin" {
@@ -126,20 +127,11 @@ func AdminAuth(c *fiber.Ctx) error {
 	return nil
 }
 
-//User authorization
+// User authorization
 func UserAuth(c *fiber.Ctx) error {
 	role := c.Locals("role").(string)
 	if role != "user" {
 		return errors.New("unauthorized entry")
 	}
 	return nil
-}
-
-//Common authorization for admin & user
-func CommonAuth(c *fiber.Ctx) error {
-	role := c.Locals("role").(string)
-	if role == "user" || role == "admin" {
-		return nil
-	}
-	return errors.New("unauthorized entry")
 }

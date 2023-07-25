@@ -36,7 +36,7 @@ func Router(Db *gorm.DB) {
 	app.Delete("/admin/deletePoster/:post_id", middleware.AuthMiddleware(control.Db), control.DeletePosterById)
 
 	//start a server
-	log.Info("Server starts in port 8000.....")
+	log.Info.Println("Message : 'Server starts in port 8000.....'")
 	app.Listen(":8000")
 
 }

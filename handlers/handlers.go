@@ -32,15 +32,14 @@ func (db Database) Signup(c *fiber.Ctx) error {
 		role models.Roles
 	)
 	log := logs.Log()
-	log.Info("signup-API called...")
-	defer log.Info("signup-API finished")
+	log.Info.Println("Message : 'signup-API called'")
 
 	//Get user details from request body
 	if err := c.BodyParser(&data); err != nil {
-		log.Error(err)
+		log.Error.Println("Error : 'internal server error' Status : 500")
 		return c.JSON(fiber.Map{
-			"status":  500,
-			"message": "internal server error",
+			"status": 500,
+			"error":  "internal server error",
 		})
 	}
 
@@ -49,64 +48,74 @@ func (db Database) Signup(c *fiber.Ctx) error {
 	for _, field := range fields {
 		if reflect.ValueOf(&data).Elem().FieldByName(field).Interface() == "" {
 			stmt := fmt.Sprintf("missing %s", field)
-			log.Error(stmt)
+			log.Error.Printf("Error : '%s' Status : 400\n", stmt)
 			return c.JSON(fiber.Map{
-				"message": stmt,
+				"status": 400,
+				"error":  stmt,
 			})
 		}
 	}
 
-	//validates correct email format
+	//validate email format
 	emailRegex := regexp.MustCompile(`^[a-z0-9._%+\-]+@[a-z0-9.\-]+\.[a-z]{2,4}$`)
 	if !emailRegex.MatchString(data.Email) {
-		log.Error("Invalid Email")
+		log.Error.Println("Error : 'Invalid Email' Status : 400")
 		return c.JSON(fiber.Map{
-			"status":  400,
-			"message": "Invalid Email",
+			"status": 400,
+			"error":  "Invalid Email",
 		})
 	}
 
 	//validate the password
 	if len(data.Password) < 8 {
-		log.Error("password must be greater than 8 characters")
+		log.Error.Println("Error : 'password must be greater than 8 characters' Status : 400")
 		return c.JSON(fiber.Map{
-			"status":  400,
-			"message": "password must be greater than 8 characters",
+			"status": 400,
+			"error":  "password must be greater than 8 characters",
+		})
+	}
+
+	//validate the role
+	if data.Role != "admin" && data.Role != "user" {
+		log.Error.Println("Error : 'Invalid role' Status : 400")
+		return c.JSON(fiber.Map{
+			"status": 400,
+			"error":  "Invalid role",
 		})
 	}
 
 	//To check if the user details already exist or not
 	data, err := repository.ReadUserByEmail(db.Db, data)
 	if err == nil {
-		log.Error("user already exist")
+		log.Error.Println("Error : 'user already exist' Status : 409")
 		return c.JSON(fiber.Map{
-			"status":  409,
-			"message": "user already exist",
+			"status": 409,
+			"error":  "user already exist",
 		})
 	}
 
 	//To change the password into hashedPassword
 	password, err := bcrypt.GenerateFromPassword([]byte(data.Password), bcrypt.DefaultCost)
 	if err != nil {
-		log.Error(err)
+		log.Error.Printf("Error : '%s'\n", err)
 		return nil
 	}
 	data.Password = string(password)
 
 	//Select a role_id for specified role
-	role, _ = repository.
-		ReadRoleIdByRole(db.Db, data)
+	role, _ = repository.ReadRoleIdByRole(db.Db, data)
 	data.RoleId = role.RoleId
 
 	//Adding a user details into our database
 	if err = repository.CreateUser(db.Db, data); err != nil {
-		log.Errorf("Error :%s", err)
+		log.Error.Println("Error : 'email already exist' Status : 409")
 		return c.JSON(fiber.Map{
-			"status":  409,
-			"message": "email already exist",
+			"status": 409,
+			"error":  "email already exist",
 		})
 	}
-	log.Info("signup successful!!!")
+
+	log.Info.Println("Message : 'signup successful!!!' Status : 200")
 	return c.JSON(fiber.Map{
 		"status":    200,
 		"message":   "signup successful!!!",
@@ -118,14 +127,13 @@ func (db Database) Signup(c *fiber.Ctx) error {
 func (db Database) Login(c *fiber.Ctx) error {
 	var data models.User
 	log := logs.Log()
-	log.Info("login-API called...")
-	defer log.Info("login-API finished")
-
+	log.Info.Println("Message : 'login-API called'")
 	//Get mail-id and password from request body
 	if err := c.BodyParser(&data); err != nil {
+		log.Error.Println("Error : 'internal server error' Status : 500")
 		return c.JSON(fiber.Map{
-			"status":  500,
-			"message": "internal server error",
+			"status": 500,
+			"error":  "internal server error",
 		})
 	}
 
@@ -134,9 +142,10 @@ func (db Database) Login(c *fiber.Ctx) error {
 	for _, field := range fields {
 		if reflect.ValueOf(&data).Elem().FieldByName(field).Interface() == "" {
 			stmt := fmt.Sprintf("missing %s", field)
-			log.Error(stmt)
+			log.Error.Printf("Error : '%s' Status : 400\n", stmt)
 			return c.JSON(fiber.Map{
-				"message": stmt,
+				"Status": 400,
+				"error":  stmt,
 			})
 		}
 	}
@@ -144,10 +153,10 @@ func (db Database) Login(c *fiber.Ctx) error {
 	//validates correct email format
 	emailRegex := regexp.MustCompile(`^[a-z0-9._%+\-]+@[a-z0-9.\-]+\.[a-z]{2,4}$`)
 	if !emailRegex.MatchString(data.Email) {
-		log.Error("Invalid Email")
+		log.Error.Println("Error : 'Invalid Email' Status : 400")
 		return c.JSON(fiber.Map{
-			"status":  400,
-			"message": "Invalid Email",
+			"status": 400,
+			"error":  "Invalid Email",
 		})
 	}
 
@@ -158,8 +167,7 @@ func (db Database) Login(c *fiber.Ctx) error {
 			// Fetch a JWT token
 			auth, err := repository.ReadTokenByUserId(db.Db, user)
 			if err == nil {
-
-				log.Info("Login Successful!!!")
+				log.Info.Println("Message : 'login successful!!!' Status : 200")
 				return c.JSON(fiber.Map{
 					"status":  200,
 					"message": "Login Successful!!!",
@@ -174,33 +182,33 @@ func (db Database) Login(c *fiber.Ctx) error {
 			}
 			auth.UserId, auth.Token = user.UserId, token
 			if err = repository.AddToken(db.Db, auth); err != nil {
-				log.Errorf("Error :%s", err)
+				log.Error.Printf("Error : '%s' Status : 409\n", err)
 				return c.JSON(fiber.Map{
-					"status":  409,
-					"message": err.Error(),
+					"status": 409,
+					"error":  err.Error(),
 				})
 			}
 
-			log.Info("Login Successful!!!")
+			log.Info.Println("Message : 'login successful!!!' Status : 200")
 			return c.JSON(fiber.Map{
 				"status":  200,
 				"message": "Login Successful!!!",
 				"token":   token,
 			})
 		}
-		log.Error("incorrect password")
+		log.Error.Println("Error : 'incorrect password' Status : 400")
 		c.Status(fiber.StatusBadRequest)
 		return c.JSON(fiber.Map{
-			"status":  400,
-			"message": "incorrect password",
+			"status": 400,
+			"error":  "incorrect password",
 		})
 
 	}
-	log.Error("user not found")
+	log.Error.Println("Error : 'user not found' Status : 404")
 	c.Status(fiber.StatusNotFound)
 	return c.JSON(fiber.Map{
-		"status":  404,
-		"message": "user not found",
+		"status": 404,
+		"error":  "user not found",
 	})
 }
 
@@ -212,20 +220,18 @@ func (db Database) PostPoster(c *fiber.Ctx) error {
 	)
 	log := logs.Log()
 	if err := middleware.AdminAuth(c); err != nil {
-		log.Error("unauthorized entry")
+		log.Error.Println("Error : 'unauthorized entry' Status : 401")
 		return c.Status(fiber.StatusForbidden).JSON(fiber.Map{
-			"message": "unauthorized entry",
-			"status":  401,
+			"error":  "unauthorized entry",
+			"status": 401,
 		})
 	}
-	log.Info("poster-API called...")
-	defer log.Info("poster-API finished")
-
+	log.Info.Println("Message : 'poster-API called'")
 	if err := c.BodyParser(&Post); err != nil {
-		log.Error(err)
+		log.Error.Println("Error : 'internal server error' Status : 500")
 		return c.JSON(fiber.Map{
-			"status":  500,
-			"message": "internal server error",
+			"status": 500,
+			"error":  "internal server error",
 		})
 	}
 
@@ -234,9 +240,10 @@ func (db Database) PostPoster(c *fiber.Ctx) error {
 	for _, field := range fields {
 		if reflect.ValueOf(&Post).Elem().FieldByName(field).Interface() == "" {
 			stmt := fmt.Sprintf("missing %s", field)
-			log.Error(stmt)
+			log.Error.Printf("Error : '%s' Status : 400\n", stmt)
 			return c.JSON(fiber.Map{
-				"message": stmt,
+				"Status": 400,
+				"error":  stmt,
 			})
 		}
 	}
@@ -245,21 +252,21 @@ func (db Database) PostPoster(c *fiber.Ctx) error {
 	Post.UserId = uint(userId)
 	Catagory, err := repository.ReadCatagoryIdByCatagory(db.Db, Post)
 	if err != nil {
-		log.Errorf("Invalid catagory")
+		log.Error.Println("Error : 'Invalid catagory' Status : 400")
 		return c.JSON(fiber.Map{
-			"status":  400,
-			"message": "Invalid catagory",
+			"status": 400,
+			"error":  "Invalid catagory",
 		})
 	}
 	Post.CatagoryId = Catagory.CatagoryId
 	if err = repository.CreatePost(db.Db, Post); err != nil {
-		log.Errorf("Error :%s", err)
+		log.Error.Printf("Error : '%s' Status : 400\n", err)
 		return c.JSON(fiber.Map{
-			"status":  400,
-			"message": err.Error(),
+			"status": 400,
+			"error":  err.Error(),
 		})
 	}
-	log.Info("Post added successfully")
+	log.Info.Println("Message : 'Post added successfully' Status : 200")
 	return c.JSON(fiber.Map{
 		"status":  200,
 		"message": "Post added successfully",
@@ -270,84 +277,67 @@ func (db Database) PostPoster(c *fiber.Ctx) error {
 func (db Database) GetPostersByUserId(c *fiber.Ctx) error {
 	log := logs.Log()
 	if err := middleware.AdminAuth(c); err != nil {
-		log.Error("unauthorized entry")
+		log.Error.Println("Error : 'unauthorized entry' Status : 401")
 		return c.Status(fiber.StatusForbidden).JSON(fiber.Map{
-			"message": "unauthorized entry",
-			"status":  401,
+			"error":  "unauthorized entry",
+			"status": 401,
 		})
 	}
-	log.Info("Getposters-API called...")
-	defer log.Info("Getposters-API finished")
+	log.Info.Println("Message : 'Getposters-API called'")
 	claims := middleware.GetTokenClaims(c)
 	Posts, err := repository.ReadPostersByUserId(db.Db, claims.Id)
 	if err == nil {
-		log.Info("posts retrieved Successfully!!!")
+		log.Info.Println("Message : 'Post retrieved successfully' Status : 200")
 		return c.JSON(fiber.Map{
 			"status": 200,
 			"Posts":  Posts,
 		})
 	}
-	log.Error("post not found")
+	log.Error.Println("Error : 'Post not found' Status : 404")
 	c.Status(fiber.StatusNotFound)
 	return c.JSON(fiber.Map{
-		"status":  404,
-		"message": "Post not found",
+		"status": 404,
+		"error":  "Post not found",
 	})
 }
 
 // Handler for get all posters
 func (db Database) GetAllPosters(c *fiber.Ctx) error {
 	log := logs.Log()
-	if err := middleware.CommonAuth(c); err != nil {
-		log.Error("unauthorized entry")
-		return c.Status(fiber.StatusForbidden).JSON(fiber.Map{
-			"message": "unauthorized entry",
-			"status":  401,
-		})
-	}
-	log.Info("GetAllPosters-API called...")
-	defer log.Info("GetAllPosters-API finished")
+	log.Info.Println("Message : 'GetAllPosters-API called'")
 	Posts, err := repository.ReadAllPosters(db.Db)
 	if err == nil {
-		log.Info("posts retrieved Successfully!!!")
+		log.Info.Println("Message : 'Post retrieved successfully' Status : 200")
 		return c.JSON(fiber.Map{
 			"status": 200,
 			"Posts":  Posts,
 		})
 	}
-	log.Error("post not found")
+	log.Error.Println("Error : 'Post not found' Status : 404")
 	c.Status(fiber.StatusNotFound)
 	return c.JSON(fiber.Map{
-		"status":  404,
-		"message": "Post not found",
+		"status": 404,
+		"error":  "Post not found",
 	})
 }
 
 // Handler for get a poster by post-id
 func (db Database) GetPosterById(c *fiber.Ctx) error {
 	log := logs.Log()
-	if err := middleware.CommonAuth(c); err != nil {
-		log.Error("unauthorized entry")
-		return c.Status(fiber.StatusForbidden).JSON(fiber.Map{
-			"message": "unauthorized entry",
-			"status":  401,
-		})
-	}
-	log.Info("Getposter-API called...")
-	defer log.Info("Getposter-API finished")
+	log.Info.Println("Message : 'Getposter-API called'")
 	Post, err := repository.ReadPostByPostId(db.Db, c.Params("post_id", ""))
 	if err == nil {
-		log.Info("post retrieved Successfully!!!")
+		log.Info.Println("Message : 'Post retrieved successfully' Status : 200")
 		return c.JSON(fiber.Map{
 			"status":    200,
 			"Post data": Post,
 		})
 	}
-	log.Error("post not found")
+	log.Error.Println("Error : 'Post not found' Status : 404")
 	c.Status(fiber.StatusNotFound)
 	return c.JSON(fiber.Map{
-		"status":  404,
-		"message": "Post not found",
+		"status": 404,
+		"error":  "Post not found",
 	})
 }
 
@@ -357,21 +347,20 @@ func (db Database) UpdatePosterById(c *fiber.Ctx) error {
 	log := logs.Log()
 
 	if err := middleware.AdminAuth(c); err != nil {
-		log.Info("unauthorized entry")
+		log.Error.Println("Error : 'unauthorized entry' Status : 401")
 		return c.Status(fiber.StatusForbidden).JSON(fiber.Map{
-			"message": "unauthorized entry",
-			"status":  401,
+			"error":  "unauthorized entry",
+			"status": 401,
 		})
 	}
-	log.Info("Updateposter-API called...")
-	defer log.Info("Updateposter-API finished")
+	log.Info.Println("Message : 'Updateposter-API called'")
 	Post, err := repository.ReadPostByPostId(db.Db, c.Params("post_id", ""))
 	if err == nil {
 		if err := c.BodyParser(&Post); err != nil {
-			log.Error(err)
+			log.Error.Println("Error : 'internal server error' Status : 500")
 			return c.JSON(fiber.Map{
-				"status":  500,
-				"message": "internal server error",
+				"status": 500,
+				"error":  "internal server error",
 			})
 		}
 
@@ -382,37 +371,37 @@ func (db Database) UpdatePosterById(c *fiber.Ctx) error {
 			}
 		}
 		if check == 3 {
-			log.Error("no data found to do update")
+			log.Error.Println("Error : 'no data found to do update' Status : 404")
 			return c.JSON(fiber.Map{
-				"status":  404,
-				"message": "no data found to do update",
+				"status": 404,
+				"error":  "no data found to do update",
 			})
 		}
 		if Post.Catagory != "" {
 			Catagory, err := repository.ReadCatagoryIdByCatagory(db.Db, Post)
 			if err != nil {
-				log.Error("invalid catagory")
+				log.Error.Println("Error : 'invalid catagory' Status : 404")
 				c.Status(fiber.StatusNotFound)
 				return c.JSON(fiber.Map{
-					"status":  404,
-					"message": "invalid catagory",
+					"status": 404,
+					"error":  "invalid catagory",
 				})
 			}
 			Post.CatagoryId = Catagory.CatagoryId
 		}
 		if err := repository.UpdatePostByPostId(db.Db, c.Params("post_id", ""), Post); err == nil {
-			log.Info("post updated Successfully!!!")
+			log.Info.Println("Message : 'Post updated successfully' Status : 200")
 			return c.JSON(fiber.Map{
 				"status":  200,
 				"message": "post updated Successfully!!!",
 			})
 		}
 	}
-	log.Error("post not found")
+	log.Error.Println("Error : 'Post not found' Status : 404")
 	c.Status(fiber.StatusNotFound)
 	return c.JSON(fiber.Map{
-		"status":  404,
-		"message": "Post not found",
+		"status": 404,
+		"error":  "Post not found",
 	})
 }
 
@@ -420,28 +409,27 @@ func (db Database) UpdatePosterById(c *fiber.Ctx) error {
 func (db Database) DeletePosterById(c *fiber.Ctx) error {
 	log := logs.Log()
 	if err := middleware.AdminAuth(c); err != nil {
-		log.Error("unauthorized entry")
+		log.Error.Println("Error : 'unauthorized entry' Status : 401")
 		return c.Status(fiber.StatusForbidden).JSON(fiber.Map{
-			"message": "unauthorized entry",
-			"status":  401,
+			"error":  "unauthorized entry",
+			"status": 401,
 		})
 	}
-	log.Info("Deleteposter-API called...")
-	defer log.Info("Deleteposter-API finished")
+	log.Info.Println("Message : 'Deleteposter-API called'")
 	if _, err := repository.ReadPostByPostId(db.Db, c.Params("post_id", "")); err == nil {
 		repository.DeletePostByPostId(db.Db, c.Params("post_id", ""))
-		log.Info("post deleted Successfully!!!")
+		log.Info.Println("Message : 'Post deleted successfully' Status : 200")
 		return c.JSON(fiber.Map{
 			"status":  200,
 			"message": "post deleted Successfully!!!",
 		})
 	}
 
-	log.Error("post not found")
+	log.Error.Println("Error : 'Post not found' Status : 404")
 	c.Status(fiber.StatusNotFound)
 	return c.JSON(fiber.Map{
-		"status":  404,
-		"message": "Post not found",
+		"status": 404,
+		"error":  "Post not found",
 	})
 }
 
@@ -450,29 +438,29 @@ func (db Database) AddComment(c *fiber.Ctx) error {
 	var commentData models.Comments
 	log := logs.Log()
 	if err := middleware.UserAuth(c); err != nil {
-		log.Error("unauthorized entry")
+		log.Error.Println("Error : 'unauthorized entry' Status : 401")
 		return c.Status(fiber.StatusForbidden).JSON(fiber.Map{
-			"message": "unauthorized entry",
-			"status":  401,
+			"error":  "unauthorized entry",
+			"status": 401,
 		})
 
 	}
-	log.Info("AddComment-API called...")
-	defer log.Info("AddComment-API finished")
+	log.Info.Println("Message : 'AddComment-API called'")
 	if err := c.BodyParser(&commentData); err != nil {
-		log.Error(err)
+		log.Error.Println("Error : 'internal server error' Status : 500")
 		return c.JSON(fiber.Map{
-			"status":  500,
-			"message": "internal server error",
+			"status": 500,
+			"error":  "internal server error",
 		})
 	}
 	fields := structs.Names(&models.CommentReq{})
 	for _, field := range fields {
 		if reflect.ValueOf(&commentData).Elem().FieldByName(field).Interface() == "" {
 			stmt := fmt.Sprintf("missing %s", field)
-			log.Error(stmt)
+			log.Error.Printf("Error : '%s' Status : 400\n", stmt)
 			return c.JSON(fiber.Map{
-				"message": stmt,
+				"status": 400,
+				"error":  stmt,
 			})
 		}
 	}
@@ -481,23 +469,22 @@ func (db Database) AddComment(c *fiber.Ctx) error {
 	commentData.UserId = uint(userId)
 	Post, err := repository.ReadPostIdbyPostTitle(db.Db, commentData.PostTitle)
 	if err != nil {
-		log.Error(err)
-
+		log.Error.Println("Error : 'Post not found' Status : 404")
 		return c.JSON(fiber.Map{
-			"status":  400,
-			"message": "post not found",
+			"status": 404,
+			"error":  "post not found",
 		})
 	}
 	commentData.PostId = Post.PostId
 	if err := repository.CreateComment(db.Db, commentData); err != nil {
-		log.Error(err)
+		log.Error.Printf("Error : '%s' Status : 400\n", err)
 		c.Status(fiber.StatusBadRequest)
 		return c.JSON(fiber.Map{
-			"status":  400,
-			"message": err.Error(),
+			"status": 400,
+			"error":  err.Error(),
 		})
 	}
-	log.Info("comment added successfully")
+	log.Info.Println("Message : 'Comment added successfully' Status : 200")
 	c.Status(fiber.StatusAccepted)
 	return c.JSON(fiber.Map{
 		"status":  200,
@@ -509,120 +496,94 @@ func (db Database) AddComment(c *fiber.Ctx) error {
 func (db Database) EditCommentByCommentId(c *fiber.Ctx) error {
 	log := logs.Log()
 	if err := middleware.UserAuth(c); err != nil {
-		log.Info("unauthorized entry")
+		log.Error.Println("Error : 'unauthorized entry' Status : 401")
 		return c.Status(fiber.StatusForbidden).JSON(fiber.Map{
-			"message": "unauthorized entry",
-			"status":  401,
+			"error":  "unauthorized entry",
+			"status": 401,
 		})
 	}
-	log.Info("Updateposter-API called...")
-	defer log.Info("Updateposter-API finished")
+	log.Info.Println("Message : 'Updateposter-API called'")
 	comment, err := repository.ReadCommentByCommentId(db.Db, c.Params("comment_id", ""))
 	if err == nil {
 		if err := c.BodyParser(&comment); err != nil {
-			log.Error(err)
+			log.Error.Println("Error : 'internal server error' Status : 500")
 			return c.JSON(fiber.Map{
-				"status":  500,
-				"message": "internal server error",
+				"status": 500,
+				"error":  "internal server error",
 			})
 		}
 
 		if comment.Comment == "" {
-			log.Error("comment field is required")
+			log.Error.Println("Error : 'comment field is required' Status : 404")
 			return c.JSON(fiber.Map{
-				"status":  404,
-				"message": "comment field is required",
+				"status": 404,
+				"error":  "comment field is required",
 			})
 		}
 
 		if err := repository.EditCommentByCommentId(db.Db, c.Params("comment_id", ""), comment); err == nil {
-			log.Info("comment edited Successfully!!!")
+			log.Info.Println("Message : 'comment edited  successfully' Status : 200")
 			return c.JSON(fiber.Map{
 				"status":  200,
 				"message": "comment edited Successfully!!!",
 			})
 		}
 	}
-	log.Error("comment not found")
+	log.Error.Println("Error : 'comment not found' Status : 404")
 	c.Status(fiber.StatusNotFound)
 	return c.JSON(fiber.Map{
-		"status":  404,
-		"message": "comment not found",
+		"status": 404,
+		"error":  "comment not found",
 	})
 }
 
 // Handler for get a comment by post-id
 func (db Database) GetCommentByPostId(c *fiber.Ctx) error {
 	log := logs.Log()
-	if err := middleware.CommonAuth(c); err != nil {
-		log.Error("unauthorized entry")
-		return c.Status(fiber.StatusForbidden).JSON(fiber.Map{
-			"message": "unauthorized entry",
-			"status":  401,
-		})
-	}
-	log.Info("GetCommentById-API called...")
-	defer log.Info("GetCommentById-API finished")
+	log.Info.Println("Message : 'GetCommentById-API called'")
 	commentData, err := repository.ReadCommentsByPostId(db.Db, c.Params("post_id", ""))
 	if err == nil && commentData != nil {
-		log.Info("Comment(s) retrieved Successfully!!!")
+		log.Info.Println("Message : 'comment(s) retrieved successfully' Status : 200")
 		return c.JSON(fiber.Map{
 			"status":   200,
 			"Comments": commentData,
 		})
 	}
-	log.Error("Comment not found for this post")
+	log.Error.Println("Error : 'Comment not found for this post' Status : 404")
 	c.Status(fiber.StatusNotFound)
 	return c.JSON(fiber.Map{
-		"status":  404,
-		"message": "Comment not found for this post",
+		"status": 404,
+		"error":  "Comment not found for this post",
 	})
 }
 
 // Handler for delete a comment
 func (db Database) DeleteCommentById(c *fiber.Ctx) error {
 	log := logs.Log()
-	if err := middleware.CommonAuth(c); err != nil {
-		log.Error("unauthorized entry")
-		return c.Status(fiber.StatusForbidden).JSON(fiber.Map{
-			"message": "unauthorized entry",
-			"status":  401,
-		})
-	}
-	log.Info("DeleteCommentById-API called...")
-	defer log.Info("DeleteCommentById-API finished")
+	log.Info.Println("Message : 'DeleteCommentById-API called'")
 	if _, err := repository.ReadCommentByCommentId(db.Db, c.Params("comment_id", "")); err == nil {
 		repository.DeleteComment(db.Db, c.Params("comment_id", ""))
-		log.Info("Comment deleted Successfully!!!")
+		log.Info.Println("Message : 'comment deleted successfully' Status : 200")
 		return c.JSON(fiber.Map{
 			"status":  200,
 			"message": "Comment deleted Successfully!!!",
 		})
 	}
-	log.Info("Comment not found")
+	log.Error.Println("Error : 'Comment not found' Status : 404")
 	c.Status(fiber.StatusNotFound)
 	return c.JSON(fiber.Map{
-		"status":  404,
-		"message": "Comment not found",
+		"status": 404,
+		"error":  "Comment not found",
 	})
 }
 
 // Handler for Logout
 func (db Database) Logout(c *fiber.Ctx) error {
 	log := logs.Log()
-	if err := middleware.CommonAuth(c); err != nil {
-		log.Error("unauthorized entry")
-		return c.Status(fiber.StatusForbidden).JSON(fiber.Map{
-			"message": "unauthorized entry",
-			"status":  401,
-		})
-	}
-	
-	log.Info("Logout-API called...")
-	defer log.Info("Logout-API finished")
+	log.Info.Println("Message : 'Logout-API called'")
 	claims := middleware.GetTokenClaims(c)
 	repository.DeleteToken(db.Db, claims.Id)
-	log.Info("Logout Successful")
+	log.Info.Println("Message : 'Logout Successful' Status : 200")
 	return c.JSON(fiber.Map{
 		"status":  200,
 		"message": "Logout Successful",

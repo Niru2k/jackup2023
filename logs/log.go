@@ -1,31 +1,19 @@
 package logs
 
 import (
-	//Inbuild packages
-	"fmt"
-	"io"
-	"os"
+	//user defined package
+	"blog/models"
 
-	//Third-party packages
-	"github.com/sirupsen/logrus"
-	easy "github.com/t-tomalak/logrus-easy-formatter"
+	//inbuild package(s)
+	"log"
+	"os"
 )
 
-func Log() *logrus.Logger {
-	f, err := os.OpenFile("log.log", os.O_WRONLY|os.O_CREATE|os.O_APPEND, 0644)
-	if err != nil {
-		fmt.Println("Failed to create logfile" + "log.txt")
-		panic(err)
-	}
-
-	log := &logrus.Logger{
-		// Log into f file handler and on os.Stdout
-		Out:   io.MultiWriter(f, os.Stdout),
-		Level: logrus.DebugLevel,
-		Formatter: &easy.Formatter{
-			TimestampFormat: "02-01-2006 15:04:05",
-			LogFormat:       "[%lvl%]: %time% - %msg%\n",
-		},
-	}
-	return log
+// Create a custom log
+func Log() (logger models.Logs) {
+	log.SetFlags(log.Ldate | log.Lmicroseconds | log.Lshortfile)
+	file, _ := os.OpenFile("log.log", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+	logger.Info = log.New(file, "[INFO:] ", log.Ldate|log.Lmicroseconds|log.Lshortfile)
+	logger.Error = log.New(file, "[ERROR:]", log.Ldate|log.Lmicroseconds|log.Lshortfile)
+	return
 }
